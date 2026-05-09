@@ -202,7 +202,7 @@ class QQMusicClient(BaseMusicClient):
     '''_parsewithxianyuwapi'''
     def _parsewithxianyuwapi(self, search_result: dict, request_overrides: dict = None):
         # init
-        decrypt_func, REQUEST_KEYS = lambda t: base64.b64decode(str(t).encode('utf-8')).decode('utf-8'), ['c2stNTI3OWY0MGQ3ODQxZDVmZDFlODEyZWRkMzRhODg4OTQ=', 'c2stNTVkNjE0MDY2NTk1NGU4ZjY2NTFmODNhMmQ2ZWYyNmU=']
+        decrypt_func, REQUEST_KEYS = lambda t: base64.b64decode(str(t)[14:].encode('utf-8')).decode('utf-8'), ['charlespikachuc2stOTgyNzMxYTI4MGE0ZTU4MTE5ODhmY2EyOTVhOWRkMTQ=', 'charlespikachuc2stYjU3ZDE3YWMzMTBjNjIzZGUwMzZlNjdmYjBkNTk3Y2I=']
         request_overrides, song_id, song_info = request_overrides or {}, search_result.get('mid') or search_result.get('songmid'), SongInfo(source=self.source)
         # parse
         (resp := self.get(f'https://apii.xianyuw.cn/api/v1/qq-music-search?id={song_id}&key={decrypt_func(random.choice(REQUEST_KEYS))}&no_url=0&br=hires', **request_overrides)).raise_for_status()
