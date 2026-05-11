@@ -1011,7 +1011,7 @@ class TIDALMusicClientUtils:
     @staticmethod
     def getstreamurlmonochromeapi(song_id, quality: str, request_overrides: dict = None) -> Tuple[StreamUrl, Any]:
         headers, request_overrides = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"}, request_overrides or {}
-        for host in ['frankfurt-2.monochrome.tf', 'arran.monochrome.tf', 'api.monochrome.tf', 'eu-central.monochrome.tf', 'us-west.monochrome.tf']:
+        for host in ['frankfurt-2.monochrome.tf', 'arran.monochrome.tf', 'api.monochrome.tf', 'eu-central.monochrome.tf', 'us-west.monochrome.tf', 'monochrome-api.samidy.com']:
             with suppress(Exception): data = requests.get(f'https://{host}/track/?id={song_id}&quality={quality}', headers=headers, timeout=10, **request_overrides).json()['data']
             if locals().get('data') and isinstance(locals().get('data'), dict) and ('trackId' in locals().get('data')): break
         if "vnd.tidal.bt" in (resp := aigpy.model.dictToModel(data, StreamRespond())).manifestMimeType:
@@ -1115,10 +1115,30 @@ class TIDALMusicClientUtils:
             ret.url = ret.urls[0] if len(ret.urls) > 0 else ret.url
             return ret, data
         raise Exception("Can't get the streamUrl, type is " + resp.manifestMimeType)
+    '''getstreamurlzarzapi'''
+    @staticmethod
+    def getstreamurlzarzapi(song_id, quality: str, request_overrides: dict = None) -> Tuple[StreamUrl, Any]:
+        headers, request_overrides = {"User-Agent": "SpotiFLAC-Mobile/1.0"}, request_overrides or {}
+        (resp := requests.post("https://api.zarz.moe/v1/dl/tid2", json={"id": str(song_id), "quality": quality}, headers=headers, timeout=10, **request_overrides)).raise_for_status()
+        if "vnd.tidal.bt" in (resp := aigpy.model.dictToModel((data := resp.json()['data']), StreamRespond())).manifestMimeType:
+            manifest, ret = json.loads(base64.b64decode(resp.manifest).decode('utf-8')), StreamUrl()
+            ret.trackid, ret.soundQuality, ret.codec, ret.encryptionKey, ret.url, ret.urls = resp.trackid, resp.audioQuality, manifest['codecs'], manifest['keyId'] if 'keyId' in manifest else "", manifest['urls'][0], [manifest['urls'][0]]
+            return ret, data
+        elif "dash+xml" in resp.manifestMimeType:
+            manifest, ret = TIDALMusicClientUtils.parsempd(base64.b64decode(resp.manifest)), StreamUrl()
+            ret.trackid, ret.soundQuality = resp.trackid, resp.audioQuality; audio_reps: list[Representation] = []
+            audio_reps.extend(r for p in manifest.periods for a in p.adaptation_sets if a.content_type == "audio" for r in a.representations)
+            if not audio_reps: raise ValueError('MPD manifest did not contain any audio representations.')
+            representation: Representation = next((rep for rep in audio_reps if rep.segments), audio_reps[0])
+            if (codec := (representation.codec or '').upper()).startswith('MP4A'): codec = 'AAC'
+            ret.codec, ret.encryptionKey, ret.urls = codec, "", representation.segments
+            ret.url = ret.urls[0] if len(ret.urls) > 0 else ret.url
+            return ret, data
+        raise Exception("Can't get the streamUrl, type is " + resp.manifestMimeType)
     '''getstreamurl'''
     @staticmethod
     def getstreamurl(song_id, quality: str, apply_thirdpart_apis: bool = True, request_overrides: dict = None) -> Tuple[StreamUrl, Any]:
-        candidate_parsers = [TIDALMusicClientUtils.getstreamurlsquidapi, TIDALMusicClientUtils.getstreamurlqqdlapi, TIDALMusicClientUtils.getstreamurlgeekedapi, TIDALMusicClientUtils.getstreamurlmonochromeapi, TIDALMusicClientUtils.getstreamurlbinimumapi, TIDALMusicClientUtils.getstreamurlspotisaverapi] if apply_thirdpart_apis else []
+        candidate_parsers = [TIDALMusicClientUtils.getstreamurlzarzapi, TIDALMusicClientUtils.getstreamurlzarzapi, TIDALMusicClientUtils.getstreamurlsquidapi, TIDALMusicClientUtils.getstreamurlqqdlapi, TIDALMusicClientUtils.getstreamurlgeekedapi, TIDALMusicClientUtils.getstreamurlmonochromeapi, TIDALMusicClientUtils.getstreamurlbinimumapi, TIDALMusicClientUtils.getstreamurlspotisaverapi] if apply_thirdpart_apis else []
         for parser in [*candidate_parsers, TIDALMusicClientUtils.getstreamurlofficialapi]:
             stream_url, stream_resp = None, None
             with suppress(Exception): stream_url, stream_resp = parser(song_id=song_id, quality=quality, request_overrides=request_overrides)
