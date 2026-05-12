@@ -711,7 +711,7 @@ musicdl -p "https://music.apple.com/cn/playlist/%E5%8D%81%E5%A4%A7%E4%B8%93%E8%B
 # Parse and Download Bodian Music Playlist
 musicdl -p "https://h5app.kuwo.cn/m/bodian/collection.html?uid=1798690&playlistId=1669719&source=5&ownerId=1798690"
 # Parse and Download Deezer Music Playlist
-musicdl -p "https://www.deezer.com/us/playlist/4697225044" -m DeezerMusicClient -i "{'DeezerMusicClient': {'default_parse_cookies': your_vip_cookies_with_str_or_dict_format}}"
+musicdl -p "https://www.deezer.com/us/playlist/4697225044" -m DeezerMusicClient
 # Parse and Download 5SING Music Playlist
 musicdl -p "https://5sing.kugou.com/yeluoluo/dj/631b3fa72418b11003089b8d.html" -m FiveSingMusicClient
 # Parse and Download FMA Music Playlist
