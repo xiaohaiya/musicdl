@@ -112,6 +112,7 @@ If you are a copyright or rights holder and believe that this repository infring
 |                                          | [QobuzMusicClient](https://play.qobuz.com/discover)                | [Qobuz (提供CD质量的流媒体平台)](https://play.qobuz.com/discover)            | ✅        | ✅         | [qobuz.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/qobuz.py)                         |
 |                                          | [SoundCloudMusicClient](https://soundcloud.com/discover)           | [SoundCloud (声云)](https://soundcloud.com/discover)                         | ✅        | ✅         | [soundcloud.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/soundcloud.py)               |
 |                                          | [SpotifyMusicClient](https://open.spotify.com/)                    | [Spotify (思播)](https://open.spotify.com/)                                  | ✅        | ✅         | [spotify.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/spotify.py)                     |
+|                                          | [SunoMusicClient](https://suno.com/discover)                       | [Suno (AI音乐生成网站)](https://suno.com/discover)                           | ✅        | ✅         | [suno.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/suno.py)                           |
 |                                          | [TIDALMusicClient](https://tidal.com/)                             | [TIDAL (提供HiFi音质的流媒体平台)](https://tidal.com/)                       | ✅        | ✅         | [tidal.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/tidal.py)                         |
 |                                          | [YouTubeMusicClient](https://music.youtube.com/)                   | [油管音乐](https://music.youtube.com/)                                       | ✅        | ✅         | [youtube.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/sources/youtube.py)                     |
 | **Audio / Radio**                        | [ITunesMusicClient](https://www.apple.com/itunes/)                 | [苹果播客](https://www.apple.com/itunes/)                                    | ✅        | ✅         | [itunes.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/audiobooks/itunes.py)                    |
@@ -698,6 +699,7 @@ AppleMusicClient,      DeezerMusicClient,       FiveSingMusicClient,    JamendoM
 KuwoMusicClient,       KugouMusicClient,        MiguMusicClient,        NeteaseMusicClient,      QQMusicClient,
 QianqianMusicClient,   QobuzMusicClient,        SoundCloudMusicClient,  StreetVoiceMusicClient,  SodaMusicClient,
 SpotifyMusicClient,    TIDALMusicClient,        FMAMusicClient,         JioSaavnMusicClient,     BodianMusicClient,
+SunoMusicClient,
 ```
 
 You can download a supported playlist directly from the terminal:
@@ -744,6 +746,8 @@ musicdl -p "https://soundcloud.com/pandadub/sets/the-lost-ship" -m SoundCloudMus
 musicdl -p "https://qishui.douyin.com/s/iHFSgNKw/" -m SodaMusicClient
 # Parse and Download Spotify Music Playlist
 musicdl -p "https://open.spotify.com/playlist/37i9dQZF1E8NWHOpySOxQd" -m SpotifyMusicClient
+# Parse and Download Suno Music Playlist
+musicdl -p "https://suno.com/playlist/71f56f55-93a8-4c93-830d-6762853cc862" -m SunoMusicClient
 # Parse and Download TIDAL Music Playlist
 musicdl -p "https://tidal.com/playlist/a94e7dce-da66-413d-81a5-990328afa3c9" -m TIDALMusicClient -i "{'TIDALMusicClient': {'default_parse_cookies': your_vip_cookies_with_str_or_dict_format}}"
 ```

@@ -1583,6 +1583,90 @@ SpotifyMusicClient works out of the box with just musicdl installed, without req
   music_client.download(song_infos=song_infos)
   ```
 
+#### SunoMusicClient
+
+[Suno](https://suno.com/discover) is a music company built to amplify imagination, making it possible for anyone to turn ideas, emotions, and stories into original songs and explore new ways of creating music with AI.
+
+SunoMusicClient provides a simple way to fetch music from the platform mentioned above.
+
+SunoMusicClient works out of the box with only musicdl installed and does not require extra command-line tools such as ffmpeg or N_m3u8DL-RE.
+
+(1) Command-Line Usage
+
+- Basic usage for song search and download, without login cookies:
+
+  `musicdl -m SunoMusicClient`
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  `musicdl -m SunoMusicClient -i "{'SunoMusicClient': {'default_search_cookies': 'YOUR_COOKIES'}}"`
+
+  The cookies config for SunoMusicClient should only include `auth_token`. 
+  This value can be obtained from the network requests: look for the authorization header in Request Headers and copy the long token after Bearer. 
+  For example:
+  
+  `{'auth_token': xxx}`
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  `musicdl -p "https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e" -m SunoMusicClient`
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  `musicdl -p "https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e" -m SunoMusicClient -i "{'SunoMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+
+(2) Invoke It in Python
+
+- Basic usage for song search and download, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'])
+  music_client.startcmdui()
+  ```
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'SunoMusicClient': {
+        'default_search_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  music_client.startcmdui()
+  ```
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'])
+  song_infos = music_client.parseplaylist("https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e")
+  music_client.download(song_infos=song_infos)
+  ```
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'SunoMusicClient': {
+        'default_parse_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  song_infos = music_client.parseplaylist("https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e")
+  music_client.download(song_infos=song_infos)
+  ```
+
 #### TIDALMusicClient (Built-in Premium Account)
 
 [TIDAL](https://tidal.com/) is a music streaming platform that offers millions of tracks, albums, playlists, and videos, with a focus on high-fidelity audio quality.

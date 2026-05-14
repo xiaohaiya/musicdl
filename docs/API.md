@@ -358,6 +358,7 @@ End users usually do not create this class directly. Instead, they use subclasse
 - `musicdl.modules.sources.StreetVoiceMusicClient`
 - `musicdl.modules.sources.SoundCloudMusicClient`
 - `musicdl.modules.sources.SpotifyMusicClient`
+- `musicdl.modules.sources.SunoMusicClient`
 - `musicdl.modules.sources.TIDALMusicClient`
 - `musicdl.modules.sources.YouTubeMusicClient`
 - `musicdl.modules.thirdpartysites.BuguyyMusicClient`

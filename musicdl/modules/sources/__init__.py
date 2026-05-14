@@ -6,6 +6,7 @@ from .base import BaseMusicClient
 from .kuwo import KuwoMusicClient
 from .migu import MiguMusicClient
 from .soda import SodaMusicClient
+from .suno import SunoMusicClient
 from .tidal import TIDALMusicClient
 from .apple import AppleMusicClient
 from .kugou import KugouMusicClient
@@ -39,7 +40,7 @@ class MusicClientBuilder(BaseModuleBuilder):
         # Global Streaming / Indie
         'YouTubeMusicClient': YouTubeMusicClient,      'JooxMusicClient': JooxMusicClient,                 'AppleMusicClient': AppleMusicClient,               'JamendoMusicClient': JamendoMusicClient,         'SoundCloudMusicClient': SoundCloudMusicClient, 
         'DeezerMusicClient': DeezerMusicClient,        'QobuzMusicClient': QobuzMusicClient,               'SpotifyMusicClient': SpotifyMusicClient,           'TIDALMusicClient': TIDALMusicClient,             'FMAMusicClient': FMAMusicClient,
-        'JioSaavnMusicClient': JioSaavnMusicClient,    'OpenGameArtMusicClient': OpenGameArtMusicClient,
+        'JioSaavnMusicClient': JioSaavnMusicClient,    'OpenGameArtMusicClient': OpenGameArtMusicClient,   'SunoMusicClient': SunoMusicClient,
         # Audio / Radio
         'XimalayaMusicClient': XimalayaMusicClient,    'LizhiMusicClient': LizhiMusicClient,               'QingtingMusicClient': QingtingMusicClient,         'LRTSMusicClient': LRTSMusicClient,               'ITunesMusicClient': ITunesMusicClient,
         # Aggregators / Multi-Source Gateways
