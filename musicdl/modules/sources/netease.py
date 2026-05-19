@@ -358,6 +358,23 @@ class NeteaseMusicClient(BaseMusicClient):
             if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
         # return
         return song_info
+    '''_parsewithlblbapi'''
+    def _parsewithlblbapi(self, search_result: dict, request_overrides: dict = None):
+        # init
+        request_overrides, song_id = request_overrides or {}, search_result['id']
+        # parse
+        for music_quality in MUSIC_QUALITIES:
+            (resp := self.post(url=f'https://music163.lblb.eu/Song_V1', data={'url': song_id, 'level': music_quality, 'type': 'json'}, timeout=10, **request_overrides)).raise_for_status()
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['data', 'url'], '')) or not str(download_url).startswith('http'): continue
+            download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
+            duration_in_secs = extractdurationsecondsfromlrc((lyric := cleanlrc(safeextractfromdict(download_result, ['data', 'lyric'], '') or '')))
+            song_info = SongInfo(
+                raw_data={'search': search_result, 'download': download_result, 'lyric': {}, 'quality': music_quality}, source=self.source, song_name=legalizestring(safeextractfromdict(download_result, ['data', 'name'], None)), singers=legalizestring(str(safeextractfromdict(download_result, ['data', 'ar_name'], None) or '').replace('/', ', ')), album=legalizestring(safeextractfromdict(download_result, ['data', 'al_name'], None)), 
+                ext=download_url_status['ext'], file_size_bytes=download_url_status['file_size_bytes'], file_size=download_url_status['file_size'], identifier=song_id, duration_s=duration_in_secs, duration=SongInfoUtils.seconds2hms(duration_in_secs), lyric=lyric, cover_url=safeextractfromdict(download_result, ['data', 'pic'], None), download_url=download_url_status['download_url'], download_url_status=download_url_status, 
+            )
+            if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
+        # return
+        return song_info
     '''_parsewithmanshuoapi'''
     def _parsewithmanshuoapi(self, search_result: dict, request_overrides: dict = None):
         # init
@@ -494,7 +511,7 @@ class NeteaseMusicClient(BaseMusicClient):
     '''_parsewiththirdpartapis'''
     def _parsewiththirdpartapis(self, search_result: dict, request_overrides: dict = None):
         if (cookies := self.default_cookies or request_overrides.get('cookies')) and (cookies != DEFAULT_COOKIES): return SongInfo(source=self.source, raw_data={'quality': MUSIC_QUALITIES[-1]})
-        for parser_func in [self._parsewithxiaoqinapi, self._parsewithcggapi, self._parsewithxingmianapi, self._parsewithkangqiovoapi, self._parsewithhaitangwapi, self._parsewithcunyuapi, self._parsewithqjqqapi, self._parsewithyutangxiaowuapi, self._parsewithxiaotapi, self._parsewithgdstudioapi, self._parsewithxcvtsapi, self._parsewithnycnmbyfunsapi, self._parsewithceseetapi, self._parsewithxianyuwapi,
+        for parser_func in [self._parsewithxiaoqinapi, self._parsewithcggapi, self._parsewithxingmianapi, self._parsewithkangqiovoapi, self._parsewithhaitangwapi, self._parsewithlblbapi, self._parsewithcunyuapi, self._parsewithqjqqapi, self._parsewithyutangxiaowuapi, self._parsewithxiaotapi, self._parsewithgdstudioapi, self._parsewithxcvtsapi, self._parsewithnycnmbyfunsapi, self._parsewithceseetapi, self._parsewithxianyuwapi,
                             self._parsewithxuanluogeapi, self._parsewithrrvennapi, self._parsewithznnuapi, self._parsewithcyruiapi, self._parsewithtmetuapi, self._parsewithjfjtapi, self._parsewithbugpkapi, self._parsewithguyueiapi, self._parsewithmanshuoapi,]:  # invalid apis (test at 2026/05/19)
             song_info_flac = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}, 'quality': MUSIC_QUALITIES[-1]})
             with suppress(Exception): song_info_flac = parser_func(search_result, request_overrides)
