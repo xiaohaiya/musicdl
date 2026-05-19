@@ -134,7 +134,7 @@ class KugouMusicClient(BaseMusicClient):
         if not (song_detail := resp2json(resp=resp)): return song_detail
         duration = float(song_detail.get("timeLength") or safeextractfromdict(song_detail, ["extra", "128timelength"], 0) or 0) / 1000
         with suppress(Exception): (resp := self.get("http://mobilecdnbj.kugou.com/api/v3/album/info", params={"albumid": song_detail["albumid"], "version": "9108", "plat": "0"}, **request_overrides)).raise_for_status()
-        cover_url = ((album_info := resp2json(resp=resp)).get("imgurl") or song_detail.get("album_img") or "").replace("{size}", "400")
+        cover_url = ((album_info := (resp2json(resp=resp).get('data') or {})).get("imgurl") or song_detail.get("album_img") or "").replace("{size}", "400")
         return {"songname": song_detail.get("songName"), "singername": song_detail.get("singerName"), "album_name": album_info.get("albumname"), "duration": duration, "cover_url": cover_url, "song_detail": song_detail, "album_info": album_info}
     '''_parsewithofficialapiv1'''
     def _parsewithofficialapiv1(self, search_result: dict, song_info_flac: SongInfo = None, lossless_quality_is_sufficient: bool = True, lossless_quality_definitions: set | list | tuple = {'flac'}, request_overrides: dict = None) -> "SongInfo":
