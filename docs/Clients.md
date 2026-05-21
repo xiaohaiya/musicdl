@@ -2286,7 +2286,7 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
 
 - Restrict Music Sources and Number of Results
 
-  `musicdl -m TuneHubMusicClient -i "{'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease']}}"`
+  `musicdl -m TuneHubMusicClient -i "{'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease'], 'tunehub_api_key': 'YOUR_OWN_API_KEY'}}"`
 
 (2) Invoke It in Python
 
@@ -2305,7 +2305,7 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
   from musicdl import musicdl
 
   # allowed_music_sources can be set to any subset (i.e., any combination) of ['qq', 'netease', 'kuwo']
-  init_music_clients_cfg = {'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease']}}
+  init_music_clients_cfg = {'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease'], 'tunehub_api_key': 'YOUR_OWN_API_KEY'}}
   music_client = musicdl.MusicClient(music_sources=['TuneHubMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
   music_client.startcmdui()
   ```

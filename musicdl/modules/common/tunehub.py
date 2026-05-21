@@ -23,13 +23,12 @@ class TuneHubMusicClient(BaseMusicClient):
     ALLOWED_SITES = ['netease', 'qq', 'kuwo', 'kugou', 'migu'][:3] # it seems kugou and migu are useless, recorded in 2026-01-28
     TUNEHUB_API_MUSIC_QUALITIES = ['flac24bit', 'flac', '320k', '128k']
     METING_API_MUSIC_QUALITIES = ['400', '380', '320', '128']
-    REQUEST_API_KEYS = ['dGhfZDgzYzY4YjA5NDVlYzYxMjZjNDQxMzkwN2MxYzc3MmI3YmI3ZGUwODU4NWI0N2Y1', 'dGhfZmExMzdmMTBjODllYzRjNGJjNjljYmU3MzQzZWM1NzFhZDliZWUxM2EyZTM0NWZj']
-    EXPIRED_REQUEST_API_KEYS = ['dGhfOGYwMGQ4NzA5ZGJhOWQ0NDgwYmExOTE2NjgxNDdlMWI3YjkzNjkyMDkyMGZhNjZm', 'dGhfYWQ0NjM3YTIzNWI2ZjRlODUxNGU2ZThkMjU3Y2I0MjY0ODY2NjYyOTFiZDgxNzc0']
-    def __init__(self, **kwargs):
+    REQUEST_API_KEYS = ['charlespikachudGhfZGQ2YzNmZDFhZjI1ZTkyNTZmODY5YjU4MzkyNjhiZGNhMjlhYjcwZGY5ZmU4NWYy']
+    def __init__(self, tunehub_api_key: str = None, **kwargs):
         self.allowed_music_sources = list(set(kwargs.pop('allowed_music_sources', TuneHubMusicClient.ALLOWED_SITES)))
         super(TuneHubMusicClient, self).__init__(**kwargs)
-        decrypt_func = lambda t: base64.b64decode(str(t).encode('utf-8')).decode('utf-8')
-        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'X-API-Key': decrypt_func(random.choice(TuneHubMusicClient.REQUEST_API_KEYS))}
+        tunehub_api_key = tunehub_api_key if tunehub_api_key else (lambda t: base64.b64decode(str(t)[14:].encode('utf-8')).decode('utf-8'))(random.choice(TuneHubMusicClient.REQUEST_API_KEYS))
+        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'X-API-Key': tunehub_api_key}
         self.default_download_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'}
         self.default_headers = self.default_search_headers
         self._initsession()
