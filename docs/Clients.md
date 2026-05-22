@@ -471,10 +471,16 @@ MOOVMusicClient works out of the box without requiring additional command-line t
 - Simple usage for searching and downloading songs, with login cookies:
 
   `musicdl -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_search_cookies': 'YOUR_COOKIES'}}"`
+  
+  The cookies must include the `MOOVUUID` and `MTGSESSIONID` fields, like this:
+  
+  `MOOVUUID=7A1DA713-6CC7-461F-91BD-595DF18C159F; MTGSESSIONID=xxx`
 
 - Simple usage for playlist parsing and downloading, with login cookies:
 
-  `musicdl -p "https://moov.hk/?utm_source=ios&utm_medium=copylink&utm_campaign=sharing_UPL-6742190#/playlist/PP1000002386" -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  `musicdl -p "https://app.moov.hk/xIeFa" -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  
+  Please note that if the playlist was created by yourself, for example "https://moov.hk/#/collection/UPL/list/7574202", it is recommended to click Share and use the shared link to parse and download the playlist.
 
 (2) Invoke It in Python
 
@@ -505,7 +511,7 @@ MOOVMusicClient works out of the box without requiring additional command-line t
     }
   }
   music_client = musicdl.MusicClient(music_sources=['MOOVMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
-  song_infos = music_client.parseplaylist("https://moov.hk/?utm_source=ios&utm_medium=copylink&utm_campaign=sharing_UPL-6742190#/playlist/PP1000002386")
+  song_infos = music_client.parseplaylist("https://app.moov.hk/xIeFa")
   music_client.download(song_infos=song_infos)
   ```
 

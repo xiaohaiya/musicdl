@@ -26,7 +26,7 @@ from ..utils import legalizestring, resp2json, usesearchheaderscookies, safeextr
 class MOOVMusicClient(BaseMusicClient):
     source = 'MOOVMusicClient'
     DEVICE_ID = str(uuid.UUID(bytes=hashlib.sha256(f"{platform.node()}-{uuid.getnode()}".encode()).digest()[:16], version=4)).upper()
-    def __init__(self, device_id: str = None, **kwargs):
+    def __init__(self, **kwargs):
         super(MOOVMusicClient, self).__init__(**kwargs)
         self.default_search_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
@@ -40,7 +40,8 @@ class MOOVMusicClient(BaseMusicClient):
         if self.default_search_cookies: self.default_search_headers['Cookie'] = cookies2string(self.default_search_cookies)
         if self.default_parse_cookies: self.default_parse_headers['Cookie'] = cookies2string(self.default_parse_cookies)
         if self.default_download_cookies: self.default_download_headers['Cookie'] = cookies2string(self.default_download_cookies)
-        self.default_headers = self.default_search_headers; MOOVMusicClient.DEVICE_ID = device_id
+        MOOVMusicClient.DEVICE_ID = self.default_search_cookies.get('MOOVUUID') or self.default_parse_cookies.get('MOOVUUID') or self.default_download_cookies.get('MOOVUUID')
+        self.default_headers = self.default_search_headers; self.default_search_cookies = {}; self.default_parse_cookies = {}; self.default_download_cookies = {}
         self._initsession()
     '''_constructsearchurls'''
     def _constructsearchurls(self, keyword: str, rule: dict = None, request_overrides: dict = None):
