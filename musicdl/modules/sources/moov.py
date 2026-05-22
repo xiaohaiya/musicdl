@@ -13,13 +13,16 @@ import uuid
 import copy
 import hashlib
 import platform
+import subprocess
+from pathlib import Path
 from contextlib import suppress
 from .base import BaseMusicClient
-from pathvalidate import sanitize_filepath
+from platformdirs import user_log_dir
 from ..utils.hosts import MOOV_MUSIC_HOSTS
+from pathvalidate import sanitize_filepath, sanitize_filename
 from urllib.parse import urlencode, urlparse, parse_qs, unquote
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
-from ..utils import legalizestring, resp2json, usesearchheaderscookies, safeextractfromdict, extractdurationsecondsfromlrc, cookies2string, useparseheaderscookies, obtainhostname, hostmatchessuffix, cleanlrc, SongInfo, AudioLinkTester, IOUtils, SongInfoUtils
+from ..utils import usedownloadheaderscookies, legalizestring, resp2json, usesearchheaderscookies, safeextractfromdict, extractdurationsecondsfromlrc, cookies2string, useparseheaderscookies, obtainhostname, hostmatchessuffix, cleanlrc, SongInfo, AudioLinkTester, IOUtils, SongInfoUtils, NM3U8DLREDownloadCommand
 
 
 '''MOOVMusicClient'''
@@ -43,6 +46,27 @@ class MOOVMusicClient(BaseMusicClient):
         MOOVMusicClient.DEVICE_ID = self.default_search_cookies.get('MOOVUUID') or self.default_parse_cookies.get('MOOVUUID') or self.default_download_cookies.get('MOOVUUID')
         self.default_headers = self.default_search_headers; self.default_search_cookies = {}; self.default_parse_cookies = {}; self.default_download_cookies = {}
         self._initsession()
+    '''_download'''
+    @usedownloadheaderscookies
+    def _download(self, song_info: SongInfo, request_overrides: dict = None, downloaded_song_infos: list = [], progress: Progress = None, song_progress_id: int = 0, auto_supplement_song: bool = True):
+        # deal with hls streams
+        song_info, request_overrides = copy.deepcopy(song_info), copy.deepcopy(request_overrides or {})
+        song_info._save_path = sanitize_filepath(song_info.save_path); song_info.work_dir = os.path.dirname(song_info.save_path); IOUtils.touchdir(song_info.work_dir)
+        try:
+            log_file_path = os.path.join(user_log_dir(appname='musicdl', appauthor='zcjin'), f"musicdl_{sanitize_filename(str(song_info.identifier))}.log")
+            cmd = NM3U8DLREDownloadCommand().build(song_info.download_url, song_info.save_path, log_file_path=log_file_path, auto_select=True, tmp_dir=sanitize_filepath(str(Path(song_info.save_path).parent / str(song_info.identifier))), save_pattern=Path(song_info.save_path).name, mods=({"__add__": [("--key", k) for k in keys]} if (keys := song_info.download_url_status.get('decrypt_keys')) else None))
+            progress.update(song_progress_id, total=None, description=f"{self.source}._download >>> {song_info.song_name[:15] + '...' if len(song_info.song_name) > 18 else song_info.song_name[:18]} (Downloading)")
+            subprocess.run(cmd, check=True, capture_output=self.disable_print, text=True, encoding='utf-8', errors='ignore')
+            real_save_path = max(Path(song_info.save_path).parent.glob(f"{Path(song_info.save_path).name}*"), key=lambda p: p.stat().st_mtime, default=None)
+            song_info._save_path, song_info.ext = AudioLinkTester.extractaudiofromvideolossless(real_save_path, song_info.save_path)
+            if not os.path.samefile(real_save_path, song_info.save_path): os.remove(real_save_path)
+            progress.update(song_progress_id, total=os.path.getsize(song_info.save_path), advance=os.path.getsize(song_info.save_path), description=f"{self.source}._download >>> {song_info.song_name[:15] + '...' if len(song_info.song_name) > 18 else song_info.song_name[:18]} (Success)")
+            downloaded_song_infos.append(SongInfoUtils.supplsonginfothensavelyricsthenwritetags(song_info, logger_handle=self.logger_handle, disable_print=self.disable_print) if auto_supplement_song else song_info)
+        except Exception as err:
+            progress.update(song_progress_id, description=f"{self.source}._download >>> {song_info.song_name[:15] + '...' if len(song_info.song_name) > 18 else song_info.song_name[:18]} (Error: {err})")
+            self.logger_handle.error(f"{self.source}._download >>> {song_info.song_name[:15] + '...' if len(song_info.song_name) > 18 else song_info.song_name[:18]} (Error: {err})", disable_print=self.disable_print)
+        # return
+        return downloaded_song_infos
     '''_constructsearchurls'''
     def _constructsearchurls(self, keyword: str, rule: dict = None, request_overrides: dict = None):
         # init

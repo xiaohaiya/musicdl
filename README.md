@@ -183,6 +183,7 @@ Certain music clients supported by musicdl require extra CLI tools to function c
   Required By:
 
   - [AppleMusicClient](https://music.apple.com/)
+  - [MOOVMusicClient](https://moov.hk/)
   - [SoundCloudMusicClient](https://soundcloud.com/discover)
   - [StreetVoiceMusicClient](https://www.streetvoice.cn/)
   - [TIDALMusicClient](https://tidal.com/)
@@ -227,6 +228,7 @@ Certain music clients supported by musicdl require extra CLI tools to function c
   Required By:
   
   - [AppleMusicClient](https://music.apple.com/)
+  - [MOOVMusicClient](https://moov.hk/)
   - [SoundCloudMusicClient](https://soundcloud.com/discover)
   - [TIDALMusicClient](https://tidal.com/)
   
@@ -250,6 +252,7 @@ Certain music clients supported by musicdl require extra CLI tools to function c
   Required By:
   
   - [AppleMusicClient](https://music.apple.com/)
+  - [MOOVMusicClient](https://moov.hk/)
   - [SoundCloudMusicClient](https://soundcloud.com/discover)
   - [TIDALMusicClient](https://tidal.com/)
   
