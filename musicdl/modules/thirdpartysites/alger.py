@@ -11,8 +11,8 @@ import time
 import json
 from contextlib import suppress
 from rich.progress import Progress
-from urllib.parse import urlencode
 from ..sources import BaseMusicClient
+from urllib.parse import urlencode, urlparse, parse_qs
 from ..utils import resp2json, legalizestring, usesearchheaderscookies, safeextractfromdict, SongInfo, AudioLinkTester, SongInfoUtils
 
 
@@ -46,12 +46,15 @@ class AlgerMusicClient(BaseMusicClient):
     @usesearchheaderscookies
     def _search(self, keyword: str = '', search_url: str = '', request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
-        request_overrides = request_overrides or {}
+        request_overrides, page_no = request_overrides or {}, int(float(parse_qs(urlparse(url=search_url).query, keep_blank_values=True).get('offset')[0]) / self.search_size_per_page) + 1
         # successful
         try:
             # --search results
             (resp := self.get(search_url, **request_overrides)).raise_for_status()
-            for search_result in resp2json(resp=resp)['result']['songs']:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(resp2json(resp=resp)['result']['songs']):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --download results
                 if not isinstance(search_result, dict) or not (song_id := search_result.get('id')): continue
                 with suppress(Exception): resp = None; (resp := self.get(f'http://mc.alger.fun/music_proxy/music?id={song_id}', **request_overrides)).raise_for_status()

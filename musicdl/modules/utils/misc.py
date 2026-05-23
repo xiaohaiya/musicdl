@@ -184,7 +184,7 @@ class AudioLinkTester:
         "spu", "spx", "ssf", "stm", "snd", "tak", "thd", "tta", "spc", "sd2f", "umx", "usf", "miniusf", "voc", "vgm", "vgz", "wav", "wave", "w64", "it", "far", 
         "wax", "wma", "wve", "wv", "wvx", "xi", "8svx", "16svx", "2sf", "3ga", "669", "aa3", "amf", "at3", "at9", "dmf", "weba",
         # special and encrypted
-        "m4s", "mflac", "mgg", "qmcflac", "qmc0", "qmc3", "qmcogg", "bkcmp3", "bkcflac", "tkm", "kgm", "vpr", "kwm", "ncm", "mg3d"
+        "m4s", "mflac", "mgg", "qmcflac", "qmc0", "qmc3", "qmcogg", "bkcmp3", "bkcflac", "tkm", "kgm", "vpr", "kwm", "ncm", "mg3d", "rar",
     }
     AUDIO_MIME_PREFIX = "audio/"
     AUDIO_MIME_EXTRA = {"application/octet-stream", "application/flac", "application/ogg", "application/vnd.apple.mpegurl", "application/x-flac", "application/x-mpegurl", "video/mp4"}

@@ -50,7 +50,7 @@ class BuguyyMusicClient(BaseMusicClient):
         # parse download url
         (resp := self.get(f'https://a.buguyy.top/newapi/geturl2.php?id={song_id}', verify=False, **request_overrides)).raise_for_status()
         for quark_download_url in [u for u in [search_result.get('downurl', ''), search_result.get('ktmdownurl', '')] if u]:
-            m = re.search(r"(?i)(?:WAV|FLAC)#(https?://[^#]+)|MP3#(https?://[^#]+)", quark_download_url)
+            m = re.search(r"(?i)(?:RAR|WAV|FLAC)#(https?://[^#]+)|MP3#(https?://[^#]+)", quark_download_url)
             download_result, download_url = QuarkParser.parsefromurl(m.group(1) or m.group(2), **self.quark_parser_config)
             if not download_url or not str(download_url).startswith('http'): continue
             download_url_status: dict = self.quark_audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
@@ -98,12 +98,15 @@ class BuguyyMusicClient(BaseMusicClient):
     @usesearchheaderscookies
     def _search(self, keyword: str = '', search_url: str = '', request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
-        request_overrides = request_overrides or {}
+        request_overrides, page_no = request_overrides or {}, 1
         # successful
         try:
             # --search results
             (resp := self.get(search_url, verify=False, **request_overrides)).raise_for_status()
-            for search_result in resp2json(resp=resp)['data']['list']:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(resp2json(resp=resp)['data']['list']):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --download results
                 if not isinstance(search_result, dict) or ('id' not in search_result): continue
                 # ----parse from quark links
