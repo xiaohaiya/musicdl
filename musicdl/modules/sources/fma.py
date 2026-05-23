@@ -87,10 +87,10 @@ class FMAMusicClient(BaseMusicClient):
         try:
             # --search results
             (resp := self.get(search_url, **request_overrides)).raise_for_status()
-            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=self.search_size_per_page if self.strict_limit_search_size_per_page else len(BeautifulSoup(resp.text, "lxml").select(".play-item[data-track-info]")), completed=0)
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
             for search_result_idx, search_result_item in enumerate(BeautifulSoup(resp.text, "lxml").select(".play-item[data-track-info]")):
                 # --update progress
-                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=(len(song_infos) + 1) if self.strict_limit_search_size_per_page else (search_result_idx + 1))
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --init song info
                 with suppress(Exception): search_result = None; search_result = json_repair.loads(search_result_item["data-track-info"])
                 if not search_result or not isinstance(search_result, dict) or not search_result.get('id'): continue

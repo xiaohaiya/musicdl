@@ -131,10 +131,10 @@ class AppleMusicClient(BaseMusicClient):
         try:
             # --search results
             (resp := self.get(search_url, **request_overrides)).raise_for_status()
-            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=self.search_size_per_page if self.strict_limit_search_size_per_page else len(resp2json(resp)['resources']['songs']), completed=0)
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
             for search_result_idx, (song_key, search_result) in enumerate(dict(resp2json(resp)['resources']['songs']).items()):
                 # --update progress
-                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=(len(song_infos) + 1) if self.strict_limit_search_size_per_page else (search_result_idx + 1))
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --init song info
                 song_info, search_result['song_key'] = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}}), song_key
                 # --parse with official apis
