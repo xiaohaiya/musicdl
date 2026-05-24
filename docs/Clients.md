@@ -1252,7 +1252,7 @@ JamendoMusicClient requires only a pip installation of musicdl, with no addition
   music_client.download(song_infos=song_infos)
   ```
 
-#### JooxMusicClient
+#### JooxMusicClient (Built-in Premium Account)
 
 [JOOX](https://www.joox.com/intl) is a music streaming platform by Tencent that offers over 40 million songs, playlists, karaoke, live broadcasting, and social audio features.
 

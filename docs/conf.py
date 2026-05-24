@@ -20,7 +20,7 @@
 project = 'musicdl'
 copyright = '2018-2030, Zhenchao Jin'
 author = 'Zhenchao Jin'
-release = '2.12.1'
+release = '2.12.2'
 
 # -- General configuration ---------------------------------------------------
 

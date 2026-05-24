@@ -8,7 +8,11 @@ WeChat Official Account (微信公众号):
 '''
 import os
 import copy
+import hmac
+import time
+import json
 import base64
+import hashlib
 import json_repair
 from bs4 import BeautifulSoup
 from contextlib import suppress
@@ -16,6 +20,7 @@ from .base import BaseMusicClient
 from pathvalidate import sanitize_filepath
 from ..utils.hosts import JOOX_MUSIC_HOSTS
 from urllib.parse import urlencode, urlparse, parse_qs
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
 from ..utils import legalizestring, resp2json, usesearchheaderscookies, safeextractfromdict, extractdurationsecondsfromlrc, cookies2string, useparseheaderscookies, obtainhostname, hostmatchessuffix, cleanlrc, SongInfo, AudioLinkTester, LyricSearchClient, IOUtils, SongInfoUtils
 
@@ -49,6 +54,41 @@ class JooxMusicClient(BaseMusicClient):
         self.search_size_per_page = self.search_size_per_source
         # return
         return search_urls
+    '''_parsewithliuyunidcapi'''
+    def _parsewithliuyunidcapi(self, search_result: dict, lang: str = 'zh_TW', country: str = 'hk', request_overrides: dict = None) -> "SongInfo":
+        # init
+        request_overrides, song_id, MUSIC_QUALITIES = request_overrides or {}, search_result.get('id'), ['master', 'atmos', 'hires', 'flac', '320k']
+        headers = {
+            "accept": "*/*", "accept-encoding": "gzip, deflate", "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7", "referer": "http://api.liuyunidc.cn/baimusic/",
+            "host": "api.liuyunidc.cn", "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        }
+        secret_key, api_url = "jooxsecret123456jooxsecret123456", "http://api.liuyunidc.cn/baimusic/jooxalljxapi.php"
+        sign_func = lambda mid, quality, ts: hmac.new(secret_key.encode("utf-8"), f"{mid}:{quality}:{ts}".encode("utf-8"), hashlib.sha256).hexdigest()
+        decrypt_resp_func = lambda encrypted: (lambda raw: json.loads(AESGCM(secret_key.encode("utf-8")).decrypt(raw[:12], raw[28:] + raw[12:28], None).decode("utf-8")))(base64.b64decode(encrypted))
+        # parse
+        (resp := self.get('https://api.joox.com/web-fcgi-bin/web_get_songinfo', params={'songid': song_id, 'lang': lang, 'country': country}, **request_overrides)).raise_for_status()
+        (download_result := json_repair.loads(resp.text.removeprefix('MusicInfoCallback(')[:-1]))
+        for music_quality in MUSIC_QUALITIES:
+            params = {"mid": download_result.get('songmid'), "q": music_quality, "ts": (ts := int(time.time())), "sign": sign_func(download_result.get('songmid'), music_quality, ts)}
+            (resp := self.get(api_url, params=params, headers=headers, timeout=10, **request_overrides)).raise_for_status()
+            download_result['download_info'] = decrypt_resp_func(resp2json(resp=resp)["encrypted"])
+            if not (download_url := safeextractfromdict(download_result['download_info'], ['url'], None)) or not str(download_url).startswith('http'): continue
+            download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
+            song_info = SongInfo(
+                raw_data={'search': search_result, 'download': download_result, 'lyric': {}}, source=self.source, song_name=legalizestring(search_result.get('name')), singers=legalizestring(', '.join([singer.get('name') for singer in (search_result.get('artist_list', []) or []) if isinstance(singer, dict) and singer.get('name')])), album=legalizestring(search_result.get('album_name')), ext=download_url_status['ext'], 
+                file_size_bytes=download_url_status['file_size_bytes'], file_size=download_url_status['file_size'], identifier=song_id, duration_s=int(float(download_result.get('minterval') or 0)), duration=SongInfoUtils.seconds2hms(download_result.get('minterval')), lyric=None, cover_url=download_result.get('imgSrc'), download_url=download_url_status['download_url'], download_url_status=download_url_status, 
+            )
+            if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
+        # return
+        return song_info
+    '''_parsewiththirdpartapis'''
+    def _parsewiththirdpartapis(self, search_result: dict, lang: str = 'zh_TW', country: str = 'hk', request_overrides: dict = None):
+        if self.default_cookies: return SongInfo(source=self.source)
+        for parser_func in [self._parsewithliuyunidcapi]:
+            song_info_flac = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}})
+            with suppress(Exception): song_info_flac = parser_func(search_result, lang, country, request_overrides)
+            if song_info_flac.with_valid_download_url and song_info_flac.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
+        return song_info_flac
     '''_parsewithofficialapiv1'''
     def _parsewithofficialapiv1(self, search_result: dict, lang: str = 'zh_TW', country: str = 'hk', song_info_flac: SongInfo = None, lossless_quality_is_sufficient: bool = True, lossless_quality_definitions: set | list | tuple = {'flac'}, request_overrides: dict = None) -> "SongInfo":
         # init
@@ -82,7 +122,7 @@ class JooxMusicClient(BaseMusicClient):
     def _search(self, keyword: str = '', search_url: str = '', request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
         request_overrides, parsed_search_url = request_overrides or {}, parse_qs(urlparse(search_url).query, keep_blank_values=True)
-        lang, country, page_no = parsed_search_url['lang'][0], parsed_search_url['country'][0], 1
+        lang, country, page_no, lossless_quality_is_sufficient = parsed_search_url['lang'][0], parsed_search_url['country'][0], 1, False if self.default_cookies or request_overrides.get('cookies') else True
         # successful
         try:
             # --search results
@@ -94,8 +134,10 @@ class JooxMusicClient(BaseMusicClient):
                 # --init song info
                 search_result = search_result[0] if isinstance(search_result, list) else search_result
                 song_info = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}})
+                # --parse with third part apis
+                song_info_flac = self._parsewiththirdpartapis(search_result=search_result, lang=lang, country=country, request_overrides=request_overrides)
                 # --parse with official apis
-                with suppress(Exception): song_info = self._parsewithofficialapiv1(search_result=search_result, lang=lang, country=country, song_info_flac=None, lossless_quality_is_sufficient=False, request_overrides=request_overrides)
+                with suppress(Exception): song_info = self._parsewithofficialapiv1(search_result=search_result, lang=lang, country=country, song_info_flac=song_info_flac, lossless_quality_is_sufficient=lossless_quality_is_sufficient, request_overrides=request_overrides)
                 # --append to song_infos
                 if song_info.with_valid_download_url: song_infos.append(song_info)
                 # --judgement for search_size
@@ -125,8 +167,10 @@ class JooxMusicClient(BaseMusicClient):
             for idx, track_info in enumerate(tracks_in_playlist):
                 if idx > 0: main_process_context.advance(main_progress_id, 1); main_process_context.update(main_progress_id, description=f"{len(tracks_in_playlist)} Songs Found in Playlist {playlist_id} >>> Completed ({idx}/{len(tracks_in_playlist)}) SongInfo")
                 song_info = SongInfo(source=self.source, raw_data={'search': track_info, 'download': {}, 'lyric': {}})
-                with suppress(Exception): song_info = self._parsewithofficialapiv1(search_result=track_info, lang=lang, country=country, song_info_flac=None, lossless_quality_is_sufficient=False, request_overrides=request_overrides)
-                if song_info.with_valid_download_url: song_infos.append(song_info); continue
+                song_info_flac = self._parsewiththirdpartapis(search_result=track_info, lang=lang, country=country, request_overrides=request_overrides)
+                lossless_quality_is_sufficient = False if self.default_cookies or request_overrides.get('cookies') else True
+                with suppress(Exception): song_info = self._parsewithofficialapiv1(search_result=track_info, lang=lang, country=country, song_info_flac=song_info_flac, lossless_quality_is_sufficient=lossless_quality_is_sufficient, request_overrides=request_overrides)
+                if (song_info := song_info if song_info.with_valid_download_url else song_info_flac).with_valid_download_url: song_infos.append(song_info); continue
                 self.logger_handle.warning(f'Fail to parse song id {song_info.identifier} >>> {song_info.album} {song_info.song_name} {song_info.singers} {song_info.download_url}', disable_print=self.disable_print)
             main_process_context.advance(main_progress_id, 1); main_process_context.update(main_progress_id, description=f"{len(tracks_in_playlist)} Songs Found in Playlist {playlist_id} >>> Completed ({idx+1}/{len(tracks_in_playlist)}) SongInfo")
         # post processing
