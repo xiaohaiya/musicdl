@@ -378,7 +378,7 @@ class NeteaseMusicClient(BaseMusicClient):
     '''_parsewithxunjinluapi'''
     def _parsewithxunjinluapi(self, search_result: dict, request_overrides: dict = None):
         # init
-        REQUEST_KEYS = ['charlespikachuc2tfNzQzMjk5ZmNhZGUyNDliMmU1ODYzOGQzODRjYWJkYmQ=']
+        REQUEST_KEYS = ['charlespikachuc2tfNzQzMjk5ZmNhZGUyNDliMmU1ODYzOGQzODRjYWJkYmQ=', 'charlespikachuc2tfMTIxMDAzNTM5NGI2ZThkNDVkNDNmNDdiZjNhNmYyMzI=']
         decrypt_func, request_overrides, song_id = lambda t: base64.b64decode(str(t)[14:].encode('utf-8')).decode('utf-8'), request_overrides or {}, search_result['id']
         to_seconds_func = lambda x: (lambda s: 0 if not s else (lambda p: p[-3]*3600+p[-2]*60+p[-1] if len(p)>=3 else p[0]*60+p[1] if len(p)==2 else p[0] if len(p)==1 else 0)([int(v) for v in re.findall(r'\d+', s.replace('：', ':'))]) if (':' in s or '：' in s) else (lambda h,m,sec,num: (lambda tot: tot if tot>0 else num)(h*3600+m*60+sec))(int(mo.group(1)) if (mo:=re.search(r'(\d+)\s*(?:小时|时|h|hr)', s)) else 0, int(mo.group(1)) if (mo:=re.search(r'(\d+)\s*(?:分钟|分|m|min)', s)) else 0, (int(mo.group(1)) if (mo:=re.search(r'(\d+)\s*(?:秒|s|sec)', s)) else (int(mo.group(1)) if (mo:=re.search(r'(?:分钟|分|m|min)\s*(\d+)\b', s)) else 0)), int(mo.group(0)) if (mo:=re.search(r'\d+', s)) else 0))(str(x).strip().lower())
         # parse
