@@ -10,18 +10,18 @@ import re
 import copy
 import time
 from contextlib import suppress
-from urllib.parse import urlencode
 from rich.progress import Progress
 from ..sources import BaseMusicClient
-from ..utils import legalizestring, usesearchheaderscookies, resp2json, safeextractfromdict, SongInfo, SongInfoUtils, AudioLinkTester, LyricSearchClient
+from urllib.parse import urlencode, parse_qs, urlparse
+from ..utils import legalizestring, usesearchheaderscookies, resp2json, safeextractfromdict, extractdurationsecondsfromlrc, SongInfo, SongInfoUtils, AudioLinkTester, LyricSearchClient
 
 
 '''WJHEMusicClient'''
 class WJHEMusicClient(BaseMusicClient):
     source = 'WJHEMusicClient'
-    ALLOWED_SITES = ['migu', 'qobuz', 'joox'][1:]
+    ALLOWED_SITES = ['qobuz', 'migu', 'joox']
     def __init__(self, **kwargs):
-        self.allowed_music_sources = list(set(kwargs.pop('allowed_music_sources', WJHEMusicClient.ALLOWED_SITES)))
+        self.allowed_music_sources = list(set(kwargs.pop('allowed_music_sources', WJHEMusicClient.ALLOWED_SITES[1:])))
         super(WJHEMusicClient, self).__init__(**kwargs)
         self.default_search_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "Referer": "https://music.wjhe.top/"}
         self.default_download_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "Referer": "https://music.wjhe.top/"}
@@ -47,11 +47,15 @@ class WJHEMusicClient(BaseMusicClient):
     def _search(self, keyword: str = '', search_url: str = None, request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
         request_overrides, root_source = request_overrides or {}, re.search(r'/api/music/([^/]+)/search\?', search_url).group(1)
+        page_no = int(float(parse_qs(urlparse(url=search_url).query, keep_blank_values=True).get('pageIndex')[0]))
         # successful
         try:
             # --search results
             (resp := self.get(search_url, **request_overrides)).raise_for_status()
-            for search_result in resp2json(resp)['data']['data']:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(resp2json(resp)['data']['data']):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --download results
                 if not isinstance(search_result, dict) or (not (song_id := search_result.get('ID'))) or (not search_result.get('fileLinks')): continue
                 search_result['source'], song_info = root_source, SongInfo(source=self.source, root_source=root_source), 
@@ -69,6 +73,7 @@ class WJHEMusicClient(BaseMusicClient):
                 lyric_result, lyric = LyricSearchClient().search(artist_name=song_info.singers, track_name=song_info.song_name, request_overrides=request_overrides)
                 song_info.raw_data['lyric'] = lyric_result if lyric_result else song_info.raw_data['lyric']
                 song_info.lyric = lyric if (lyric and (lyric not in {'NULL'})) else song_info.lyric
+                if song_info.duration == '-:-:-': song_info.duration_s = extractdurationsecondsfromlrc(song_info.lyric); song_info.duration = SongInfoUtils.seconds2hms(song_info.duration_s)
                 # --append to song_infos
                 if song_info.with_valid_download_url: song_infos.append(song_info)
                 # --judgement for search_size

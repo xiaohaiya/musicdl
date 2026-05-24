@@ -76,12 +76,15 @@ class MyFreeMP3MusicClient(BaseMusicClient):
     def _search(self, keyword: str = '', search_url: dict = None, request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
         request_overrides, search_meta = request_overrides or {}, copy.deepcopy(search_url)
-        search_url, source = search_meta.pop('url'), search_meta.pop('source')
+        search_url, source, page_no = search_meta.pop('url'), search_meta.pop('source'), search_meta['data']['page']
         # successful
         try:
             # --search results
             (resp := self.post(search_url, **search_meta, **request_overrides)).raise_for_status()
-            for search_result in resp2json(resp)['data']['list']:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(resp2json(resp)['data']['list']):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --download results
                 song_info = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}})
                 with suppress(Exception): song_info = {'netease': self._parseneteasesearchresult, 'kuake': self._parsequarksearchresult}[source](search_result, request_overrides)

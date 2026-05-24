@@ -69,12 +69,15 @@ class TuneHubMusicClient(BaseMusicClient):
     @usesearchheaderscookies
     def _search(self, keyword: str = '', search_url: str | dict = None, request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
-        request_overrides = request_overrides or {}
+        request_overrides, page_no = request_overrides or {}, 1 if isinstance(search_url, str) else search_url['rule']['page']
         # successful
         try:
             # --search results
             search_results = search_url['search_api'](**search_url['rule']) if isinstance(search_url, dict) else resp2json(self.get(search_url, **request_overrides))
-            for search_result in search_results:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(search_results):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --download results
                 if not isinstance(search_result, dict) or ('id' not in search_result and 'url' not in search_result): continue
                 if 'id' not in search_result: search_result['id'] = parse_qs(urlparse(str(search_result['url'])).query, keep_blank_values=True).get('id')[0]
