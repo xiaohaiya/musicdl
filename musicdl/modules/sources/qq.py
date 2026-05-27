@@ -313,7 +313,7 @@ class QQMusicClient(BaseMusicClient):
     '''_parsewiththirdpartapis'''
     def _parsewiththirdpartapis(self, search_result: dict, request_overrides: dict = None):
         if self.default_cookies or request_overrides.get('cookies'): return SongInfo(source=self.source)
-        for parser_func in [self._parsewithliuyunidcapi, self._parsewithxunhuisiapi, self._parsewith317akapi, self._parsewithlpzapi, self._parsewithtangapi, self._parsewithnkiapi, self._parsewithxianyuwapi, self._parsewithcyapi, self._parsewithlxmusicapi, self._parsewithxcvtsapi, self._parsewithvkeysapi, self._parsewithygkingapi, self._parsewithluoyueapi]:
+        for parser_func in [self._parsewithliuyunidcapi, self._parsewith317akapi, self._parsewithlpzapi, self._parsewithtangapi, self._parsewithnkiapi, self._parsewithxianyuwapi, self._parsewithxunhuisiapi, self._parsewithcyapi, self._parsewithlxmusicapi, self._parsewithxcvtsapi, self._parsewithvkeysapi, self._parsewithygkingapi, self._parsewithluoyueapi]:
             song_info_flac = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}})
             with suppress(Exception): song_info_flac = parser_func(search_result, request_overrides)
             if song_info_flac.with_valid_download_url and song_info_flac.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
