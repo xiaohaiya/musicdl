@@ -36,6 +36,11 @@ curl_cffi = optionalimport('curl_cffi')
 if TYPE_CHECKING: import curl_cffi as curl_cffi
 
 
+'''safefunctioncall'''
+def safefunctioncall(fn):
+    with suppress(Exception): return fn()
+
+
 '''legalizestring'''
 def legalizestring(string: str, fit_gbk: bool = True, max_len: int = 255, fit_utf8: bool = True, replace_null_string: str = 'NULL'):
     # naive process
