@@ -95,8 +95,8 @@ class TIDALMusicClient(BaseMusicClient):
         if lossless_quality_is_sufficient and song_info_flac.with_valid_download_url and (song_info_flac.ext in lossless_quality_definitions): song_info = song_info_flac
         else:
             for music_quality in TIDALMusicClientUtils.MUSIC_QUALITIES:
-                with suppress(Exception): stream_resp = None; download_url, stream_resp = TIDALMusicClientUtils.getstreamurl(song_id, quality=music_quality[1], apply_thirdpart_apis=(not self.tidal_tv_session.isvipaccount(request_overrides=request_overrides)), request_overrides=request_overrides)
-                if not locals().get('download_url') or not locals().get('stream_resp'): continue
+                with suppress(Exception): download_url, stream_resp = None, None; download_url, stream_resp = TIDALMusicClientUtils.getstreamurl(song_id, quality=music_quality[1], apply_thirdpart_apis=(not self.tidal_tv_session.isvipaccount(request_overrides=request_overrides)), request_overrides=request_overrides)
+                if not download_url or not stream_resp or not hasattr(download_url, 'url'): continue 
                 download_url_status: dict = self.audio_link_tester.test(url=download_url.url, request_overrides=request_overrides, renew_session=True)
                 if (download_url_status['ext'] in {'NULL'}) or (TIDALMusicClientUtils.getexpectedextension(download_url).removeprefix('.') in {'flac'}): download_url_status['ext'] = TIDALMusicClientUtils.getexpectedextension(download_url).removeprefix('.')
                 song_info = SongInfo(
@@ -116,8 +116,7 @@ class TIDALMusicClient(BaseMusicClient):
     @usesearchheaderscookies
     def _search(self, keyword: str = '', search_url: str = '', request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
-        request_overrides = request_overrides or {}
-        page_no = int(float(parse_qs(urlparse(url=search_url).query, keep_blank_values=True).get('offset')[0]) / self.search_size_per_page) + 1
+        request_overrides, page_no = request_overrides or {}, int(float(parse_qs(urlparse(url=search_url).query, keep_blank_values=True).get('offset')[0]) / self.search_size_per_page) + 1
         # successful
         try:
             # --search results
