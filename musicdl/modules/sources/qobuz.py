@@ -269,6 +269,7 @@ class QobuzMusicClient(BaseMusicClient):
                     file_size_bytes='HLS', file_size='HLS', identifier=song_id, duration_s=int(float(download_result.get('duration') or 0)), duration=SongInfoUtils.seconds2hms(int(float(download_result.get('duration') or 0))), lyric=None, cover_url=safeextractfromdict(search_result, ['album', 'image', 'large'], None), download_url=decrypt_audio_settings['url_template'], download_url_status=download_url_status, 
                 )
                 song_info.ext = 'mp3' if music_quality in {5} else 'flac' # re-set audio format to FLAC or MP3 to avoid unnecessary bugs
+                if song_info_flac.with_valid_download_url and song_info_flac.largerthan(song_info): song_info = song_info_flac
                 if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
         if not (song_info := song_info if song_info.with_valid_download_url else song_info_flac).with_valid_download_url or song_info.ext not in AudioLinkTester.VALID_AUDIO_EXTS: return song_info
         # supplement lyric results
